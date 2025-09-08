@@ -1,28 +1,30 @@
+require("dotenv").config();
 const express = require("express");
-const db = require("./db");
+const db = require("./db"); // make sure this connects to your SQLite database
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 
 const app = express();
-const PORT = 4000;
-const JWT_SECRET = "Karthik"; // Use environment variable in production!
+const PORT = process.env.PORT || 4000;
+const JWT_SECRET = process.env.JWT_SECRET;
 
-// Middlewares
+// Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({
-  origin: "http://localhost:3004", // React app origin
-  credentials: true,                // Allow cookies to be sent/received
-}));
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  })
+);
 
 // Login Endpoint
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
-  const selectedUserQuery = "SELECT * FROM users WHERE email = ?";
-  db.get(selectedUserQuery, [email], (err, user) => {
+  db.get("SELECT * FROM users WHERE email = ?", [email], (err, user) => {
     if (err) {
       console.error("Database error:", err);
       return res.status(500).json({ error: "Internal server error" });
@@ -31,17 +33,15 @@ app.post("/login", (req, res) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    // Generate JWT token
     const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
       expiresIn: "1h",
     });
 
-    // Send token in httpOnly cookie
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,    // true in production (with HTTPS)
-      sameSite: "lax",  // adjust as needed
-      maxAge: 3600000,  // 1 hour
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 3600000,
     });
 
     res.json({ message: "Login successful" });
@@ -73,13 +73,20 @@ app.post("/register", (req, res) => {
 app.post("/logout", (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: false,    // true in production
-    sameSite: "lax",  // match settings used in login
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
   });
   res.json({ message: "Logout successful" });
 });
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+// Error Handler
+app.use((err, req, res, next) => {
+  console.error("Unexpected error:", err);
+  res.status(500).json({ error: "Internal server error" });
 });
+
+// Start Server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+module.exports = app;
