@@ -7,18 +7,22 @@ const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 
 const app = express();
-const PORT = process.env.PORT || 4000;
-const JWT_SECRET = process.env.JWT_SECRET;
+const PORT =  4000;
+const JWT_SECRET = "Karthik";
 
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    origin: "http://localhost:3004",
     credentials: true,
   })
 );
+
+app.get("/", (req, res) => {
+  res.send("API is running...");
+});
 
 // Login Endpoint
 app.post("/login", (req, res) => {
@@ -39,7 +43,6 @@ app.post("/login", (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 3600000,
     });
@@ -73,7 +76,6 @@ app.post("/register", (req, res) => {
 app.post("/logout", (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
   });
   res.json({ message: "Logout successful" });
