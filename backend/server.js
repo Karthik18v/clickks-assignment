@@ -1,14 +1,14 @@
 require("dotenv").config();
 const express = require("express");
-const db = require("./db"); // make sure this connects to your SQLite database
+const db = require("./db"); // Updated db connection for serverless
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 
 const app = express();
-const PORT = 4000;
-const JWT_SECRET = "Karthik";
+const JWT_SECRET = process.env.JWT_SECRET;
+const PORT = process.env.PORT || 4000;
 
 // Middleware
 app.use(express.json());
@@ -20,11 +20,6 @@ app.use(
   })
 );
 
-app.get("/", (req, res) => {
-  res.send("API is running...");
-});
-
-// Login Endpoint
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -51,12 +46,9 @@ app.post("/login", (req, res) => {
   });
 });
 
-
-// Register Endpoint
 app.post("/register", (req, res) => {
   const { name, email, password } = req.body;
   const hashedPassword = bcrypt.hashSync(password, 10);
-  console.log(name, email, password);
 
   db.run(
     "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
@@ -74,7 +66,6 @@ app.post("/register", (req, res) => {
   );
 });
 
-// Logout Endpoint
 app.post("/logout", (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
@@ -83,14 +74,14 @@ app.post("/logout", (req, res) => {
   res.json({ message: "Logout successful" });
 });
 
-// Error Handler
 app.use((err, req, res, next) => {
   console.error("Unexpected error:", err);
   res.status(500).json({ error: "Internal server error" });
 });
 
-// Start Server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port http://localhost:${PORT}`);
 });
+
+// Export the app for Vercel serverless function
 module.exports = app;
