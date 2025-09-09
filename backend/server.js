@@ -7,7 +7,7 @@ const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 
 const app = express();
-const PORT =  4000;
+const PORT = 4000;
 const JWT_SECRET = "Karthik";
 
 // Middleware
@@ -15,7 +15,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:3004",
+    origin: "*",
     credentials: true,
   })
 );
@@ -51,10 +51,12 @@ app.post("/login", (req, res) => {
   });
 });
 
+
 // Register Endpoint
 app.post("/register", (req, res) => {
   const { name, email, password } = req.body;
   const hashedPassword = bcrypt.hashSync(password, 10);
+  console.log(name, email, password);
 
   db.run(
     "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
